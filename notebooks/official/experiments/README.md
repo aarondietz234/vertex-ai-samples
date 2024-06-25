@@ -56,6 +56,40 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction).
 
 
+[Delete Outdated Experiments in Vertex AI TensorBoard](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/experiments/delete_outdated_tensorboard_experiments.ipynb)
+
+```
+Learn how to delete outdated TensorBoard Experiments to avoid unnecessary storage costs.
+
+The steps performed include:
+
+- How to delete the TB Experiment with a predefined key-value label pair `<label_key, label_value>`
+
+- How to delete the TB Experiments created before the  `create_time`
+
+- How to delete the TB Experiments created before the  `update_time`
+
+```
+
+&nbsp;&nbsp;&nbsp;Learn more about [Vertex AI TensorBoard](https://cloud.google.com/vertex-ai/docs/experiments/tensorboard-overview).
+
+
+[Custom training autologging - Local script](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/experiments/get_started_with_custom_training_autologging_local_script.ipynb)
+
+```
+Learn how to autolog paramenters and metrics of an ML experiment running on Vertex AI training by leveraging the integration with Vertex AI Experiments.
+
+The steps performed include:
+
+- Formalize model experiment in a script
+- Run model traning using local script on Vertex AI Training
+- Check out ML experiment parameters and metrics in Vertex AI Experiments
+
+```
+
+&nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Experiments](https://cloud.google.com/vertex-ai/docs/experiments/intro-vertex-ai-experiments).
+
+
 [Get started with Vertex AI Experiments](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/experiments/get_started_with_vertex_experiments.ipynb)
 
 ```
@@ -87,4 +121,19 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [Vertex ML Metadata](https://cloud.google.com/vertex-ai/docs/ml-metadata).
 
 &nbsp;&nbsp;&nbsp;Learn more about [Custom training](https://cloud.google.com/vertex-ai/docs/training/custom-training).
+
+
+[Autologging](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/experiments/get_started_with_vertex_experiments_autologging.ipynb)
+
+```
+Learn how to use `Vertex AI Autologging`.
+
+The steps performed include:
+
+- Enable autologging in the Vertex AI SDK.
+- Train scikit-learn model and see the resulting experiment run with metrics and parameters autologged to Vertex AI Experiments without setting an experiment run.
+- Train Tensorflow model, check autologged metrics and parameters to Vertex AI Experiments by manually setting an experiment run with `aiplatform.start_run()` and `aiplatform.end_run()`.
+- Disable autologging in the Vertex AI SDK, train a PyTorch model and check that none of the parameters or metrics are logged.
+
+```
 

@@ -23,7 +23,7 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [Classification for tabular data](https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/overview).
 
 
-[Challenger vs Blessed methodology for model deployment into production](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/pipelines/challenger_vs_blessed_deployment_method.ipynb)
+[Challenger vs Blessed methodology for model deployment into production](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/challenger_vs_blessed_deployment_method.ipynb)
 
 ```
 Learn how to construct a Vertex AI pipeline, which trains a new challenger version of a model, evaluates the model and compares the evaluation to the existing blessed model in production, to determine whether the challenger model becomes the blessed model for replacement in production.
@@ -44,6 +44,10 @@ The steps performed include:
     - Deploy the new blessed model.
 
 ```
+
+&nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction).
+
+&nbsp;&nbsp;&nbsp;Learn more about [Model evaluation in Vertex AI](https://cloud.google.com/vertex-ai/docs/evaluation/introduction).
 
 
 [Pipeline control structures using the KFP SDK](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/control_flow_kfp.ipynb)
@@ -84,7 +88,7 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [Custom training components](https://cloud.google.com/vertex-ai/docs/training/create-training-pipeline).
 
 
-[Training and batch prediction with BigQuery source and destinantion for a custom tabular classification model](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/custom_tabular_train_batch_pred_bq_pipeline.ipynb)
+[Training and batch prediction with BigQuery source and destination for a custom tabular classification model](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/custom_tabular_train_batch_pred_bq_pipeline.ipynb)
 
 ```
 In this tutorial, you train a scikit-learn tabular classification model and create batch prediction job for it through a Vertex AI pipeline using `google_cloud_pipeline_components`.
@@ -108,6 +112,43 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction).
 
 &nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Batch Prediction components](https://cloud.google.com/vertex-ai/docs/pipelines/batchprediction-component).
+
+
+[Get started with Vertex AI Hyperparameter Tuning pipeline components](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/get_started_with_hpt_pipeline_components.ipynb)
+
+```
+Learn how to use prebuilt `Google Cloud Pipeline Components` for `Vertex AI Hyperparameter Tuning`.
+
+The steps performed include:
+
+- Construct a pipeline for:
+    - Hyperparameter tune/train a custom model.
+    - Retrieve the tuned hyperparameter values and metrics to optimize.
+    - If the metrics exceed a specified threshold.
+      - Get the location of the model artifacts for the best tuned model.
+      - Upload the model artifacts to a `Vertex AI Model` resource.
+- Execute a Vertex AI pipeline.
+
+```
+
+&nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction).
+
+&nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Hyperparameter Tuning](https://cloud.google.com/vertex-ai/docs/training/hyperparameter-tuning-overview).
+
+
+[Get started with machine management for Vertex AI Pipelines](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/get_started_with_machine_management.ipynb)
+
+```
+Learn how to convert a self-contained custom training component into a `Vertex AI CustomJob`, whereby:
+
+The steps performed in this tutorial include:
+
+- Create a custom component with a self-contained training job.
+- Execute pipeline using component-level settings for machine resources
+- Convert the self-contained training component into a `Vertex AI CustomJob`.
+- Execute pipeline using customjob-level settings for machine resources
+
+```
 
 
 [AutoML image classification pipelines using google-cloud-pipeline-components](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/google_cloud_pipeline_components_automl_images.ipynb)
@@ -199,26 +240,6 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [BigQuery ML components](https://cloud.google.com/vertex-ai/docs/pipelines/bigqueryml-component).
 
 
-[Loan eligibility prediction using `google-cloud-pipeline-components` and Spark ML](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/google_cloud_pipeline_components_dataproc_tabular.ipynb)
-
-```
-Learn how to build a Vertex AI pipeline and train a random-forest model using Spark ML for loan-eligibility classification problem.
-
-The steps performed include:
-
-*   Use the `DataprocPySparkBatchOp` to preprocess data.
-*   Create a Vertex AI dataset resource on the training data.
-*   Train a random forest model using PySpark.
-*   Build a Vertex AI pipeline and run the training job.
-*   Use the Spark serving image in order to deploy a Spark model on Vertex AI Endpoint.
-
-```
-
-&nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction).
-
-&nbsp;&nbsp;&nbsp;Learn more about [Dataproc components](https://cloud.google.com/vertex-ai/docs/pipelines/dataproc-component).
-
-
 [Model train, upload, and deploy using Google Cloud Pipeline Components](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/google_cloud_pipeline_components_model_train_upload_deploy.ipynb)
 
 ```
@@ -260,6 +281,25 @@ The steps performed include:
 &nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Model components](https://cloud.google.com/vertex-ai/docs/pipelines/model-endpoint-component).
 
 
+[Vertex AI Pipelines with KFP 2.x](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/kfp2_pipeline.ipynb)
+
+```
+Learn to use `Vertex AI Pipelines` and KFP 2.
+
+The steps performed include:
+
+- Create a KFP pipeline:
+    - Create a `BigQuery Dataset` resource.
+    - Export the dataset.
+    - Train an XGBoost `Model` resource.
+    - Create an `Endpoint` resource.
+    - Deploys the `Model` resource to the `Endpoint` resource.
+- Compile the KFP pipeline.
+- Execute the KFP pipeline using `Vertex AI Pipelines`
+
+```
+
+
 [Lightweight Python function-based components, and component I/O](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/lightweight_functions_component_io_kfp.ipynb)
 
 ```
@@ -296,6 +336,32 @@ The steps performed include:
 ```
 
 &nbsp;&nbsp;&nbsp;Learn more about [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction).
+
+
+[Multicontender vs Champion methodology for model deployment into production](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/multicontender_vs_champion_deployment_method.ipynb)
+
+```
+Learn how to construct a Vertex AI pipeline, which evaluates new production data from a deployed  model against other versions  of the model, to determine if a contender model becomes the champion model for replacement in production.
+
+The steps performed include:
+
+- Import a pretrained (champion) model to the `Vertex AI Model Registry`.
+- Import synthetic model training evaluation metrics to the corresponding (champion) model.
+- Create a `Vertex AI Endpoint` resource
+- Deploy the champion model to the `Endpoint` resource.
+- Import additional (contender) versions of the deployed model.
+- Import synthetic model training evaluation metrics to the corresponding (contender) models.
+- Create a Vertex AI Pipeline
+    - Get the champion model.
+    - (Fake) Fine-tune champion model with production data
+    - Import synthetic train+production evaluation metrics for the champion model.
+    - Get the contender models.
+    - (Fake) Fine-tune contender model with production data
+    - Import synthetic train+production evaluation metrics for the contenders modesl.
+    - Compare the evaluations of the contenders to the champion and set the new champion as the default.
+    - Deploy the new champion model.
+
+```
 
 
 [Pipelines introduction for KFP](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/pipelines/pipelines_intro_kfp.ipynb)

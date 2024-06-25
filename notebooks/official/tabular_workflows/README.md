@@ -14,11 +14,13 @@ The steps performed are:
 
 &nbsp;&nbsp;&nbsp;Learn more about [Google Cloud Pipeline Components](https://cloud.google.com/vertex-ai/docs/pipelines/components-introduction).
 
+&nbsp;&nbsp;&nbsp;Learn more about [Prophet for tabular data](https://cloud.google.com/vertex-ai/docs/tabular-data/forecasting-prophet).
+
 
 [TabNet Pipeline](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/tabular_workflows/tabnet_on_vertex_pipelines.ipynb)
 
 ```
-Learn how to create two classification models using Vertex AI TabNet Tabular Workflows.
+Learn how to create classification models on tabular data using two of the Vertex AI TabNet Tabular Workflows.
 
 The steps performed include:
 

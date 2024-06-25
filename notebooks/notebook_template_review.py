@@ -6,6 +6,7 @@
         --notebook: review the specified notebook
         --notebook-dir: recursively traverse the directory and review each notebook enocuntered
         --notebook-file: A CSV file with list of notebooks to review.
+        --skip-file: a CSV file with list of notebooks to skip.
         
         # options for error handling
         --errors: Report detected errors.
@@ -52,6 +53,8 @@ parser.add_argument('--notebook', dest='notebook',
                     default=None, type=str, help='Notebook to review')
 parser.add_argument('--notebook-file', dest='notebook_file',
                     default=None, type=str, help='File with list of notebooks to review')
+parser.add_argument('--skip-file', dest='skip_file',
+                    default=None, type=str, help='File with list of notebooks to skip')
 parser.add_argument('--errors', dest='errors', action='store_true', 
                     default=False, help='Report errors')
 parser.add_argument('--errors-csv', dest='errors_csv', action='store_true', 
@@ -108,6 +111,7 @@ class ErrorCode(Enum):
     ERROR_LINK_GIT_BAD = 7,
     ERROR_LINK_COLAB_BAD = 8,
     ERROR_LINK_WORKBENCH_BAD = 9,
+    ERROR_LINK_COLAB_ENTERPRISE_BAD = 102,
 
     # Overview cells
     #   Overview cell required
@@ -178,6 +182,7 @@ class FixCode(Enum):
 
 # globals
 last_tag = ''
+skip_list = []
 
 
 def parse_dir(directory: str) -> int:
@@ -186,7 +191,7 @@ def parse_dir(directory: str) -> int:
         
             directory: The directory path.
             
-        Returns the numbern of errors
+        Returns the number of errors
     """
     exit_code = 0
     
@@ -213,6 +218,9 @@ def parse_dir(directory: str) -> int:
                 continue
             exit_code += parse_dir(entry.path)
         elif entry.name.endswith('.ipynb'):
+            if entry.name in skip_list:
+                print(f"Warning: skipping notebook {entry.name}", file=sys.stderr)
+                continue
             tag = directory.split('/')[-1]
             if tag == 'automl':
                 tag = 'AutoML'
@@ -313,7 +321,8 @@ def parse_notebook(path: str,
                   objective.steps, 
                   links.git_link, 
                   links.colab_link, 
-                  links.workbench_link
+                  links.colab_enterprise_link, 
+                  links.workbench_link,
         )
         
     if args.fix:
@@ -498,7 +507,17 @@ class TitleRule(NotebookRule):
         
         cell = notebook.peek()
         if not cell['source'][0].startswith('# '):
-            ret = notebook.report_error(ErrorCode.ERROR_TITLE_HEADING, "title cell must start with H1 heading")
+            notebook.report_error(ErrorCode.ERROR_TITLE_HEADING, "title cell must start with H1 heading")
+            if not cell['source'][0].startswith('## '):
+                ret = False
+            else:
+                
+                self.title = cell['source'][0][3:].strip()
+                SentenceCaseTWRule().validate(notebook, [self.title])
+
+                # H1 title only
+                if len(cell['source']) == 1:
+                    notebook.pop()
         else:
             self.title = cell['source'][0][2:].strip()
             SentenceCaseTWRule().validate(notebook, [self.title])
@@ -518,6 +537,7 @@ class LinksRule(NotebookRule):
 
         self.git_link = None
         self.colab_link = None
+        self.colab_enterprise_link = None
         self.workbench_link = None
         source = ''
         ret = True
@@ -548,6 +568,17 @@ class LinksRule(NotebookRule):
                         cell['source'][ix] = fix_link
                     else:
                         ret = notebook.report_error(ErrorCode.ERROR_LINK_COLAB_BAD, f"bad Colab link: {self.colab_link}")
+            
+            if '<a href="https://console.cloud.google.com/vertex-ai/colab/' in line:
+                self.colab_enterprise_link = line.strip()[9:-2].replace('" target="_blank', '').replace('" target=\'_blank', '')
+                modified_notebook_path = notebook.path.replace("/", "%2F")
+                derived_link = os.path.join('https://console.cloud.google.com/vertex-ai/colab/import/https:%2F%2Fraw.githubusercontent.com%2FGoogleCloudPlatform%2Fvertex-ai-samples%2Fmain%2F', modified_notebook_path)
+                if self.workbench_link != derived_link:
+                    if notebook.report_fix(FixCode.FIX_BAD_LINK, f"fixed Colab Enterprise link: {derived_link}"):
+                        fix_link = f"<a href=\"{derived_link}\" target='_blank'>\n"
+                        cell['source'][ix] = fix_link
+                    else:
+                        ret = notebook.report_error(ErrorCode.ERROR_LINK_COLAB_ENTERPRISE_BAD, f"bad Colab Enterprise link: {self.colab_enterprise_link}")
 
             if '<a href="https://console.cloud.google.com/vertex-ai/workbench/' in line:
                 self.workbench_link = line.strip()[9:-2].replace('" target="_blank', '').replace('" target=\'_blank', '')
@@ -564,7 +595,7 @@ class LinksRule(NotebookRule):
         if 'View on GitHub' not in source or not self.git_link:
             ret = notebook.report_error(ErrorCode.ERROR_LINK_GIT_MISSING, 'Missing link for GitHub')
         if 'Run in Colab' not in source or not self.colab_link:
-            ret = notebook.report_error(ErrorCode.ERROR_LINK_COLAB_MISSING, 'Missing link for Colab')    
+            ret = notebook.report_error(ErrorCode.ERROR_LINK_COLAB_MISSING, 'Missing link for Colab')  
         if 'Open in Vertex AI Workbench' not in source or not self.workbench_link:
             ret = notebook.report_error(ErrorCode.ERROR_LINK_WORKBENCH_MISSING, 'Missing link for Workbench')
         
@@ -989,39 +1020,35 @@ class BrandingRule(TextRule):
                 'Vertex SDK': 'Vertex AI SDK',
                 'Vertex Training': 'Vertex AI Training',
                 'Vertex Prediction': 'Vertex AI Prediction',
-                'Vertex Batch Prediction': 'Vertex AI Batch Prediction',
+                'Vertex Batch Prediction': 'Vertex AI batch prediction',
                 'Vertex XAI': 'Vertex Explainable AI',
                 'Vertex Explainability': 'Vertex Explainable AI',
                 'Vertex AI Explainability': 'Vertex Explainable AI',
                 'Vertex Pipelines': 'Vertex AI Pipelines',
                 'Vertex Experiments': 'Vertex AI Experiments',
                 'Vertex TensorBoard': 'Vertex AI TensorBoard',
-                'Vertex Hyperparameter Tuning': 'Vertex AI Hyperparameter Tuning',
+                'Vertex Hyperparameter Tuning': 'Vertex AI hyperparameter tuning',
                 'Vertex Metadata': 'Vertex ML Metadata',
                 'Vertex AI Metadata': 'Vertex ML Metadata',
                 'Vertex AI ML Metadata': 'Vertex ML Metadata',
                 'Vertex Vizier': 'Vertex AI Vizier',
                 'Vertex Feature Store': 'Vertex AI Feature Store',
-                'Vertex Forecasting': 'Vertex AI Forecasting',
-                'Vertex Matching Engine': 'Vertex AI Matching Engine',
-                'Vertex TabNet': 'Vertex AI TabNet',
-                'Tabnet': 'TabNet',
-                'Vertex Two Towers': 'Vertex AI Two-Towers',
-                'Vertex Two-Towers': 'Vertex AI Two-Towers',
-                'Vertex Dataset': 'Vertex AI Dataset',
-                'Vertex Model': 'Vertex AI Model',
-                'Vertex Endpoint': 'Vertex AI Endpoint',
-                'Vertex Private Endpoint': 'Vertex AI Private Endpoint',
+                'Vertex Forecasting': 'Vertex AI forecasting',
+                'Vertex Vector Search': 'Vertex AI Vector Search',
+                'Vertex Dataset': 'Vertex AI dataset',
+                'Vertex Model': 'Vertex AI model',
+                'Vertex Endpoint': 'Vertex AI endpoint',
+                'Vertex Private Endpoint': 'Vertex AI private endpoint',
                 'Automl': 'AutoML',
-                'AutoML Tables': 'AutoML Tabular',
-                'AutoML Vision': 'AutoML Image',
-                'AutoML Language': 'AutoML Text',
+                'AutoML Image': 'AutoML Vision',
+                'AutoML Language': 'AutoML Natural Language',
                 'Tensorflow': 'TensorFlow',
-                'Tensorboard': 'TensorBoard',
+                'Tensorboard': 'Vertex AI TensorBoard',
                 'Google Cloud Notebooks': 'Vertex AI Workbench Notebooks',
                 'BQ ': 'BigQuery',
                 'BQ.': 'BigQuery',
                 'Bigquery': 'BigQuery',
+                'Big Query': 'BigQuery',
                 'BQML': 'BigQuery ML',
                 'GCS ': 'Cloud Storage',
                 'GCS.': 'Cloud Storage',
@@ -1107,6 +1134,7 @@ def add_index(path: str,
               steps: str, 
               git_link: str, 
               colab_link: str, 
+              colab_enterprise_link: str,
               workbench_link: str
              ):
     """
@@ -1120,6 +1148,7 @@ def add_index(path: str,
         steps: The steps specified by the notebook
         git_link: The link to the notebook in the git repo
         colab_link: Link to launch notebook in Colab
+        colab_enterpise_link: Link to launch notebook in Colab Enterprise
         workbench_link: Link to launch notebook in Workbench
         linkbacks: The linkbacks per tag
     """
@@ -1131,7 +1160,7 @@ def add_index(path: str,
     title = title.split(':')[-1].strip()
     title = title[0].upper() + title[1:]
     if args.web:
-        title = replace_cl(title.replace('`', ''))
+        title = replace_cl(replace_backtick(title))
         
         print('    <tr>')
         print('        <td>')
@@ -1142,7 +1171,7 @@ def add_index(path: str,
         print('        <td>')
         print(f'            <b>{title}</b>. ')
         if args.desc:
-            desc = replace_cl(desc.replace('`', ''))
+            desc = replace_cl(replace_backtick(desc))
             print('<br/>')
             print(f'            {desc}\n')
             
@@ -1161,6 +1190,7 @@ def add_index(path: str,
             print('  <ul>\n')
             
             if ":" in steps:
+                steps = replace_backtick(steps)
                 steps = steps.split(':')[1].replace('*', '').replace('-', '').strip().split('\n')
             else:
                 steps = []
@@ -1174,6 +1204,8 @@ def add_index(path: str,
         print('        <td>')
         if colab_link:
             print(f'            <a href="{colab_link}" target="_blank" class="external" track-type="notebookTutorial" track-name="colabLink">Colab</a><br/>\n')
+        if colab_enterprise_link:
+            print(f'            <a href="{colab_enterprise_link}" target="_blank" class="external" track-type="notebookTutorial" track-name="colabEnterpriseLink">Colab Enterprise</a><br/>\n')
         if git_link:
             print(f'            <a href="{git_link}" target="_blank" class="external" track-type="notebookTutorial" track-name="gitHubLink">GitHub</a><br/>\n')
         if workbench_link:
@@ -1217,11 +1249,11 @@ def replace_cl(text : str ) -> str:
     Replace product names with CL substitution variables
     '''
     substitutions = {
-        #'AutoML Tabular Workflow': '{{automl_name}} Tabular Workflow',
+        #'AutoML Tabular Workflow': '{{automl_name}} tabular workflow',
         #'AutoML Tables': '{{automl_tables_name}}',
         #'AutoML Tabular': '{{automl_tables_name}}',
-        #'AutoML Vision': '{automl_vision_name}}',
-        #'AutoML Image': '{automl_vision_name}}',
+        #'AutoML Vision': '{{automl_vision_name}}',
+        #'AutoML Image': '{{automl_vision_name}}',
         'AutoML': '{{automl_name}}',
         
         'BigQuery ML': '{{bigqueryml_name}}',
@@ -1229,10 +1261,12 @@ def replace_cl(text : str ) -> str:
         'BigQuery': '{{bigquery_name}}',
         'BQ': '{{bigquery_name}}',
         
-        'Vertex Dataset': '{{vertex_ai_name}} Dataset',
-        'Vertex Model': '{{vertex_ai_name}} Model',
-        'Vertex Endpoint': '{{vertex_ai_name}} Endpoint',
+        'Vertex Dataset': '{{vertex_ai_name}} dataset',
+        'Vertex Model': '{{vertex_ai_name}} model',
+        'Vertex Endpoint': '{{vertex_ai_name}} endpoint',
         'Vertex Model Registry': '{{vertex_model_registry_name}}',
+        'model registry': '{{vertex_model_registry_name_short}}',
+        'Model Registry': '{{vertex_model_registry_name_short}}',
         'Vertex AI Model Registry': '{{vertex_model_registry_name}}',
         'Vertex Training': '{{vertex_training_name}}',
         'Vertex AI Training': '{{vertex_training_name}}',
@@ -1248,22 +1282,29 @@ def replace_cl(text : str ) -> str:
         'Vertex AI Data Labeling': '{{vertex_data_labeling_name}}',
         'Vertex AI Experiments': '{{vertex_experiments_name}}',
         'Vertex Experiments': '{{vertex_experiments_name}}',
-        'Vertex AI Matching Engine': '{{vertex_matching_engine_name}}',
-        'Vertex Matching Engine': '{{vertex_matching_engine_name}}',
+        'Vertex AI Matching Engine': '{{vector_search_name}}',
+        'Vertex Matching Engine': '{{vector_search_name}}',
+        'Vertex Vector Search': '{{vector_search_name}}',
+        'Vector Search': '{{vector_search_name}}',
+        'Vertex AI Vector Search': '{{vector_search_name}}',
         'Vertex Model Monitoring': '{{vertex_model_monitoring_name}}',
+        'Model Monitoring': '{{vertex_model_monitoring_name_short}}',
         'Vertex AI Model Monitoring': '{{vertex_model_monitoring_name}}',
         'Vertex Feature Store': '{{vertex_featurestore_name}}',
         'Vertex AI Feature Store': '{{vertex_featurestore_name}}',
+        'Feature Store': '{{vertex_featurestore_name}}',
         'Vertex Vizier': '{{vertex_vizier_name}}',
         'Vertex AI Vizier': '{{vertex_vizier_name}}',
+        'Vizier': '{{vertex_vizier_name}}',
         'Vertex Explainable AI': '{{vertex_xai_name}}',
-        'NAS': '{{vertex_nas_name}',
+        'Explainable AI': '{{vertex_xai_name}}',
+        'NAS': '{{vertex_nas_name_short}}',
         'Vertex AI Neural Architectural Search': '{{vertex_nas_name}}',
+        'Neural Architectural Search': '{{vertex_nas_name_short}}',
         'Vertex Workbench': '{{vertex_workbench_name}}',
         'Vertex AI Workbench': '{{vertex_workbench_name}}',
-        'Vertex AI Edge Manager': '{{vertex_edge_manager_name}}',
-        'Vertex SDK': '{{vertex_sdk_name}}',
-        'Vertex AI SDK': '{{vertex_sdk_name}}',
+        #'Vertex SDK': '{{vertex_sdk_name}}',
+        #'Vertex AI SDK': '{{vertex_sdk_name}}',
         'Vertex AI': '{{vertex_ai_name}}',
         
         'Cloud Storage': '{{storage_name}}',
@@ -1278,6 +1319,21 @@ def replace_cl(text : str ) -> str:
             text = text.replace(key, value)
             
     return text
+
+def replace_backtick(text: str) -> str:
+    backtick = False
+    updated_text = ''
+    for _ in range(len(text)):
+        if text[_] == '`':
+            if not backtick:
+                updated_text += "<code>"
+            else:
+                updated_text += "</code>"
+            backtick = not backtick
+        else:
+            updated_text += text[_]
+
+    return updated_text
 
 
 
@@ -1325,6 +1381,20 @@ if args.web:
     print('        </tr>')
     print('    </thead>')
     print('    <tbody class="list">')
+    
+
+if args.skip_file:
+    if not os.path.isfile(args.skip_file):
+        print(f"Error: file does not exist: {args.skip_file}", file=sys.stderr)
+        exit(1)
+    else:
+        with open(args.skip_file, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if len(row) > 0:
+                    notebook = row[0]
+                    skip_list.append(notebook)
+                    print(f"Skip entry {notebook}", file=sys.stderr)
 
 if args.notebook_dir:
     if not os.path.isdir(args.notebook_dir):
@@ -1338,7 +1408,7 @@ elif args.notebook:
     exit_code = parse_notebook(args.notebook, tags=[], linkback=None, rules=rules)
 elif args.notebook_file:
     if not os.path.isfile(args.notebook_file):
-        print("Error: file does not exist", args.notebook_file)
+        print(f"Error: file does not exist {args.notebook_file}", file=sys.stderr)
     else:
         exit_code = 0
         with open(args.notebook_file, 'r') as csvfile:
